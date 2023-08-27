@@ -18,6 +18,7 @@ WINADVAPI WINAPI PSAPI$EnumProcessModulesEx(HANDLE hProcess, HMODULE* lphModule,
 WINADVAPI WINAPI PSAPI$GetModuleFileNameExA(HANDLE hProcess, HMODULE hModule, LPSTR lpFilename, DWORD nSize);
 WINBASEAPI WINBOOL WINAPI KERNEL32$WriteProcessMemory(HANDLE hProcess, LPVOID lpBaseAddress, LPCVOID lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesWritten);
 WINBASEAPI HANDLE WINAPI KERNEL32$CreateRemoteThread(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId);
+WINBASEAPI int __cdecl MSVCRT$strcmp(const char* s1, const char* s2);
 WINBASEAPI DWORD WINAPI KERNEL32$GetLastError(VOID);
 WINBASEAPI WINBOOL WINAPI KERNEL32$CloseHandle(HANDLE hObject);
 
@@ -27,6 +28,7 @@ WINBASEAPI WINBOOL WINAPI KERNEL32$CloseHandle(HANDLE hObject);
 #define GetModuleFileNameExA    PSAPI$GetModuleFileNameExA
 #define WriteProcessMemory      KERNEL32$WriteProcessMemory
 #define CreateRemoteThread      KERNEL32$CreateRemoteThread
+#define strcmp                  MSVCRT$strcmp
 #define GetLastError            KERNEL32$GetLastError
 #define CloseHandle             KERNEL32$CloseHandle
 
