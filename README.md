@@ -1,5 +1,7 @@
 # WIP Mockingjay BOF Conversion (lets be real it's just module stomping)
 
+EDIT: Now compatible with Brute Ratel C4.
+
 Learning how to write Cobalt Strike Beacon Object Files, converting my [Mockingjay](https://www.securityjoes.com/post/process-mockingjay-echoing-rwx-in-userland-to-achieve-code-execution) [POC](https://github.com/ewby/Mockingjay_POC) to BOF starting with WINAPI usage and incrementally adding layers of evasion for in-depth testing. Now you don't need a standalone program to perform the technique, it can all be done from your Cobalt Strike beacon.
 
 As of now it's very much a POC, the operator needs to manually enter details they've found of their target (module, section offset, and process ID). I plan to implement quality of life features to make the tool easier to use.
